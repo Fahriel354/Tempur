@@ -2,36 +2,30 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Sky Strike 2D - Mobile & PC</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sky Strike 2D - Mobile Fixed</title>
     <style>
         * {
             box-sizing: border-box;
             user-select: none;
             -webkit-user-select: none;
-            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            touch-action: none; /* Mencegah zoom & scroll bawaan browser */
         }
-        body {
+        html, body {
             margin: 0;
             padding: 0;
+            width: 100%;
+            height: 100%;
             background-color: #050b14;
             color: #fff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             overflow: hidden;
         }
         #game-container {
             position: relative;
             width: 100vw;
             height: 100vh;
-            max-width: 800px;
-            max-height: 600px;
-            border: 2px solid #00d2ff;
-            box-shadow: 0 0 25px rgba(0, 210, 255, 0.4);
-            overflow: hidden;
             background: #020813;
         }
         canvas {
@@ -40,7 +34,7 @@
             height: 100%;
         }
         
-        /* Menu Utama Overlay */
+        /* Menu Overlay */
         #menu-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -49,7 +43,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 20;
+            z-index: 30;
             padding: 20px;
             text-align: center;
         }
@@ -70,72 +64,83 @@
             flex-direction: column;
             gap: 15px;
             width: 80%;
-            max-width: 250px;
+            max-width: 260px;
         }
         
-        /* UI Overlay saat Main */
+        /* UI Overlay Gameplay */
         #ui-layer {
             position: absolute;
             top: 0; left: 0; width: 100%;
-            padding: 10px 15px;
+            padding: 12px 15px;
             pointer-events: none;
             display: none;
             justify-content: space-between;
             font-size: 14px;
             font-weight: bold;
             text-shadow: 0 0 8px rgba(0,0,0,0.9);
-            z-index: 5;
+            z-index: 10;
         }
         .p1-color { color: #00f2fe; }
         .p2-color { color: #ff0844; }
 
-        /* Kontrol Sentuh HP (Mobile Overlay) */
-        #mobile-controls {
+        /* Kontrol Sentuh HP (2 Pemain Mode) */
+        #mobile-controls-coop {
             position: absolute;
             bottom: 15px; left: 0; width: 100%;
             height: 140px;
             display: none;
             justify-content: space-between;
-            padding: 0 20px;
-            pointer-events: auto;
-            z-index: 10;
+            padding: 0 15px;
+            pointer-events: none;
+            z-index: 20;
         }
         .dpad {
             display: grid;
-            grid-template-columns: repeat(3, 45px);
-            grid-template-rows: repeat(3, 45px);
+            grid-template-columns: repeat(3, 40px);
+            grid-template-rows: repeat(3, 40px);
             gap: 3px;
+            pointer-events: auto;
         }
         .touch-btn {
-            background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
             border-radius: 8px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             color: #fff;
-            active-background: rgba(0, 242, 254, 0.4);
         }
         .touch-btn:active {
-            background: rgba(0, 242, 254, 0.5);
+            background: rgba(0, 242, 254, 0.6);
         }
         .fire-btn {
-            width: 75px; height: 75px;
+            width: 60px; height: 60px;
             border-radius: 50%;
-            background: rgba(255, 8, 68, 0.4);
-            border: 2px solid #ff0844;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
-            align-self: flex-end;
-            margin-bottom: 10px;
+            pointer-events: auto;
+            margin-top: 20px;
         }
-        .fire-btn:active {
-            background: rgba(255, 8, 68, 0.8);
+        .fire-p1 {
+            background: rgba(0, 242, 254, 0.3);
+            border: 2px solid #00f2fe;
+        }
+        .fire-p1:active { background: rgba(0, 242, 254, 0.8); }
+        .fire-p2 {
+            background: rgba(255, 8, 68, 0.3);
+            border: 2px solid #ff0844;
+        }
+        .fire-p2:active { background: rgba(255, 8, 68, 0.8); }
+
+        .control-block {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
         }
 
         /* Screen Game Over */
@@ -149,7 +154,7 @@
             padding: 25px 30px;
             border-radius: 12px;
             display: none;
-            z-index: 20;
+            z-index: 30;
             width: 80%;
             max-width: 300px;
         }
@@ -172,9 +177,9 @@
 <body>
 
 <div id="game-container">
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <canvas id="gameCanvas"></canvas>
     
-    <!-- Menu Pilih Mode -->
+    <!-- Menu Utama -->
     <div id="menu-overlay">
         <h1>SKY STRIKE 2D</h1>
         <p>Pilih Mode Permainan:</p>
@@ -182,13 +187,14 @@
             <button onclick="startGame(1)">1 PEMAIN (SOLO)</button>
             <button onclick="startGame(2)">2 PEMAIN (CO-OP)</button>
         </div>
-        <div style="margin-top: 25px; font-size: 12px; color: #888;">
-            PC: W,A,S,D / Panah + Spasi<br>
-            HP: Gunakan Tombol Layar Sentuh
+        <div style="margin-top: 20px; font-size: 12px; color: #aaa; line-height: 1.5;">
+            <b>Solo HP:</b> Geser layar untuk gerak (Auto Shoot)<br>
+            <b>Co-Op HP:</b> P1 D-Pad Kiri, P2 D-Pad Kanan<br>
+            <b>PC:</b> W,A,S,D / Panah + Spasi/Enter
         </div>
     </div>
 
-    <!-- UI Overlay saat Gameplay -->
+    <!-- UI Overlay -->
     <div id="ui-layer">
         <div>
             <div class="p1-color" id="p1-ui">P1: <span id="score1">0</span></div>
@@ -200,23 +206,42 @@
         </div>
     </div>
 
-    <!-- Kontrol Sentuh HP -->
-    <div id="mobile-controls">
-        <div class="dpad">
-            <div></div>
-            <div class="touch-btn" id="btn-up">▲</div>
-            <div></div>
-            <div class="touch-btn" id="btn-left">◄</div>
-            <div></div>
-            <div class="touch-btn" id="btn-right">►</div>
-            <div></div>
-            <div class="touch-btn" id="btn-down">▼</div>
-            <div></div>
+    <!-- Kontrol Berdua untuk HP -->
+    <div id="mobile-controls-coop">
+        <!-- P1 Controls -->
+        <div class="control-block">
+            <div class="dpad">
+                <div></div>
+                <div class="touch-btn" id="btn-p1-up">▲</div>
+                <div></div>
+                <div class="touch-btn" id="btn-p1-left">◄</div>
+                <div></div>
+                <div class="touch-btn" id="btn-p1-right">►</div>
+                <div></div>
+                <div class="touch-btn" id="btn-p1-down">▼</div>
+                <div></div>
+            </div>
+            <div class="touch-btn fire-btn fire-p1" id="btn-p1-fire">P1</div>
         </div>
-        <div class="touch-btn fire-btn" id="btn-fire">FIRE</div>
+
+        <!-- P2 Controls -->
+        <div class="control-block">
+            <div class="touch-btn fire-btn fire-p2" id="btn-p2-fire">P2</div>
+            <div class="dpad">
+                <div></div>
+                <div class="touch-btn" id="btn-p2-up">▲</div>
+                <div></div>
+                <div class="touch-btn" id="btn-p2-left">◄</div>
+                <div></div>
+                <div class="touch-btn" id="btn-p2-right">►</div>
+                <div></div>
+                <div class="touch-btn" id="btn-p2-down">▼</div>
+                <div></div>
+            </div>
+        </div>
     </div>
 
-    <!-- Screen Game Over -->
+    <!-- Game Over -->
     <div id="game-over">
         <h2>GAME OVER</h2>
         <p>Waktu: <span id="final-time">00:00</span></p>
@@ -228,56 +253,62 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Web Audio API
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // Mencegah double tap zoom di iOS/Android
+    document.addEventListener('touchstart', (e) => {
+        if (e.touches.length > 1) e.preventDefault();
+    }, { passive: false });
 
+    // Resize Canvas Mengikuti Layar HP/Browser
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Audio Synthesizer
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playSound(type) {
         if (audioCtx.state === 'suspended') audioCtx.resume();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-
         const now = audioCtx.currentTime;
 
         if (type === 'shoot') {
             osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(600, now);
-            osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+            osc.frequency.exponentialRampToValueAtTime(100, now + 0.08);
             gain.gain.setValueAtTime(0.1, now);
-            gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
-            osc.start(now);
-            osc.stop(now + 0.1);
+            gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+            osc.start(now); osc.stop(now + 0.08);
         } else if (type === 'explode') {
             osc.type = 'square';
             osc.frequency.setValueAtTime(120, now);
-            osc.frequency.exponentialRampToValueAtTime(30, now + 0.25);
+            osc.frequency.exponentialRampToValueAtTime(30, now + 0.2);
             gain.gain.setValueAtTime(0.2, now);
-            gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
-            osc.start(now);
-            osc.stop(now + 0.25);
+            gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+            osc.start(now); osc.stop(now + 0.2);
         } else if (type === 'levelup') {
             osc.type = 'sine';
             osc.frequency.setValueAtTime(300, now);
             osc.frequency.setValueAtTime(600, now + 0.15);
             gain.gain.setValueAtTime(0.15, now);
             gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
-            osc.start(now);
-            osc.stop(now + 0.3);
+            osc.start(now); osc.stop(now + 0.3);
         }
     }
 
-    // Input Handlers (PC & Mobile)
     const keys = {};
     const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
     window.addEventListener('keydown', e => keys[e.code] = true);
     window.addEventListener('keyup', e => keys[e.code] = false);
 
-    // Bintang Background
     const stars = Array.from({ length: 50 }, () => ({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
         size: Math.random() * 2 + 1,
         speed: Math.random() * 3 + 1
     }));
@@ -294,7 +325,7 @@
             this.x = x; this.y = y;
             this.width = 36; this.height = 44;
             this.color = color;
-            this.speed = 5;
+            this.speed = 6;
             this.controls = controls;
             this.id = id;
             this.score = 0;
@@ -337,13 +368,17 @@
         update() {
             if (this.isDead) return;
 
+            // Pergerakan Keyboard / Virtual D-Pad
             if (keys[this.controls.up] && this.y > 0) this.y -= this.speed;
             if (keys[this.controls.down] && this.y < canvas.height - this.height) this.y += this.speed;
             if (keys[this.controls.left] && this.x > 0) this.x -= this.speed;
             if (keys[this.controls.right] && this.x < canvas.width - this.width) this.x += this.speed;
 
-            if (keys[this.controls.shoot] && frames - this.lastShot > 14) {
-                bullets.push(new Bullet(this.x + this.width / 2, this.y, -9, this.color, this.id));
+            // Auto-fire untuk Solo Mode HP, atau tombol manual
+            let shouldShoot = keys[this.controls.shoot] || (gameMode === 1 && isMobile);
+
+            if (shouldShoot && frames - this.lastShot > 12) {
+                bullets.push(new Bullet(this.x + this.width / 2, this.y, -10, this.color, this.id));
                 this.lastShot = frames;
                 playSound('shoot');
             }
@@ -413,22 +448,42 @@
     let enemies = [];
     let particles = [];
 
-    // Pengaturan Tombol Layar Sentuh HP
-    function setupTouchControls() {
-        if (isMobile) {
-            document.getElementById('mobile-controls').style.display = 'flex';
-            
+    // Pengaturan Gestur Sentuh HP (Solo Mode Drag & Co-Op Buttons)
+    function setupTouchEvents() {
+        if (!isMobile) return;
+
+        if (gameMode === 1) {
+            // Gestur Ikuti Jari Langsung untuk Mode Solo
+            window.addEventListener('touchmove', (e) => {
+                if (players[0] && !players[0].isDead) {
+                    const touch = e.touches[0];
+                    players[0].x = touch.clientX - players[0].width / 2;
+                    players[0].y = touch.clientY - players[0].height / 2;
+                }
+            }, { passive: false });
+        } else {
+            // Menampilkan Dua D-Pad di Layar untuk Mode Berdua
+            document.getElementById('mobile-controls-coop').style.display = 'flex';
+
             const bindTouch = (btnId, keyName) => {
                 const btn = document.getElementById(btnId);
                 btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[keyName] = true; });
                 btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[keyName] = false; });
             };
 
-            bindTouch('btn-up', 'KeyW');
-            bindTouch('btn-down', 'KeyS');
-            bindTouch('btn-left', 'KeyA');
-            bindTouch('btn-right', 'KeyD');
-            bindTouch('btn-fire', 'Space');
+            // Bind Control P1
+            bindTouch('btn-p1-up', 'KeyW');
+            bindTouch('btn-p1-down', 'KeyS');
+            bindTouch('btn-p1-left', 'KeyA');
+            bindTouch('btn-p1-right', 'KeyD');
+            bindTouch('btn-p1-fire', 'Space');
+
+            // Bind Control P2
+            bindTouch('btn-p2-up', 'ArrowUp');
+            bindTouch('btn-p2-down', 'ArrowDown');
+            bindTouch('btn-p2-left', 'ArrowLeft');
+            bindTouch('btn-p2-right', 'ArrowRight');
+            bindTouch('btn-p2-fire', 'Enter');
         }
     }
 
@@ -439,17 +494,17 @@
         document.getElementById('menu-overlay').style.display = 'none';
         document.getElementById('ui-layer').style.display = 'flex';
 
-        setupTouchControls();
+        setupTouchEvents();
 
         if (gameMode === 1) {
             players = [
-                new Player(380, 500, '#00f2fe', {up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD', shoot: 'Space'}, 1)
+                new Player(canvas.width / 2 - 18, canvas.height - 100, '#00f2fe', {up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD', shoot: 'Space'}, 1)
             ];
             document.getElementById('p2-ui').style.display = 'none';
         } else {
             players = [
-                new Player(250, 500, '#00f2fe', {up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD', shoot: 'Space'}, 1),
-                new Player(510, 500, '#ff0844', {up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight', shoot: 'Enter'}, 2)
+                new Player(canvas.width * 0.3 - 18, canvas.height - 100, '#00f2fe', {up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD', shoot: 'Space'}, 1),
+                new Player(canvas.width * 0.7 - 18, canvas.height - 100, '#ff0844', {up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight', shoot: 'Enter'}, 2)
             ];
             document.getElementById('p2-ui').style.display = 'block';
         }
@@ -558,7 +613,7 @@
         if (players.every(p => p.isDead)) {
             isGameOver = true;
             document.getElementById('game-over').style.display = 'block';
-            document.getElementById('mobile-controls').style.display = 'none';
+            document.getElementById('mobile-controls-coop').style.display = 'none';
             document.getElementById('final-time').innerText = document.getElementById('time-display').innerText;
         } else {
             requestAnimationFrame(gameLoop);
